@@ -17,8 +17,11 @@ class sudoku {
 		p = obj.k;
 		// ans = obj.check(5, 5, 1);
 		// System.out.println(ans);
-		obj.solve();
 		obj.printMat();
+		obj.solve();
+		System.out.println("########################################");
+		obj.printMat();
+
 		System.out.print(obj.backtracks);
 
 	}
@@ -72,7 +75,7 @@ class sudoku {
 			for (int j = 0; j < 9; j++) {
 				// System.out.println("Inside Rec " + i + " " + j);
 				if (k[i][j] == 0) {
-					System.out.println("Inside Rec" + i + " " + j);
+					// System.out.println("Inside Rec" + i + " " + j);
 					for (int n = 1; n <= 9; n++) {
 						if (check(i, j, n) == true) {
 							k[i][j] = n;
