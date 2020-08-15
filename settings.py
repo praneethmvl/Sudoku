@@ -10,3 +10,5 @@ testBoard  = [[0 for x in range(9)]for y in range(9)]
 gridPos = (75,100)
 cellSize =  50
 gridSize = cellSize * 9
+#gridsize changed
+#colour changed
