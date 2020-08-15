@@ -1,5 +1,6 @@
 import pygame
 from settings import *
+from buttonClass import*
 import sys
 
 
@@ -11,20 +12,30 @@ class App:
         self.grid = testBoard
         self.selected = None
         self.mousePos = None
+        self.state = "playing"
+        self.playingButton = []
+        self.menuButtons = []
+        self.endButtons = []
+        self.load_buttons()
 
     def run(self):
         while self.running:
-            self.events()
-            self.update()
-            self.draw()
+            if self.state == "playing":
+                self.playing_events()
+                self.playing_update()
+                self.playing_draw()
 
         pygame.quit()
         sys.exit()
 
-    def events(self):
+    ### Playing state functions
+
+    def playing_events(self):
+        self.mousePos =pygame.mouse.get_pos()
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 self.running = False
+
             if event.type == pygame.MOUSEBUTTONDOWN:
                 selected = self.mouseOnGrid()
                 if selected:
@@ -32,19 +43,28 @@ class App:
                 else:
                     self.selected = None
 
-    def update(self):
+    def playing_update(self):
         self.mousePos = pygame.mouse.get_pos()
+        for button in self.playingButton:
+            button.update(self.mousePos)
 
-    def draw(self):
+    def playing_draw(self):
         self.window.fill(WHITE)
-        if self.selected :
-            self.drawSelection(self.window,self.selected)
+
+        for button in self.playingButton:
+            button.draw(self.window)
+
+        if self.selected:
+            self.drawSelection(self.window, self.selected)
         self.drawGrid(self.window)
         pygame.display.update()
 
-    def drawSelection(self,window,pos):
+    ### Helping Functions
+
+    def drawSelection(self, window, pos):
         # pygame.draw.rect(window,LIGHTBLUE,(pos[0]*cellSize,pos[1]*cellSize,(cellSize,cellSize)))
-        pygame.draw.rect(window, LIGHTBLUE, ((pos[0]*cellSize)+gridPos[0], (pos[1]*cellSize)+gridPos[1], cellSize, cellSize))
+        pygame.draw.rect(window, LIGHTBLUE,
+                         ((pos[0] * cellSize) + gridPos[0], (pos[1] * cellSize) + gridPos[1], cellSize, cellSize))
         # print(pos)
 
     def drawGrid(self, window):
@@ -57,7 +77,7 @@ class App:
                                  (gridPos[0] + 450, gridPos[1] + (x * cellSize)), 2)
             else:
                 pygame.draw.line(window, BLACK, (gridPos[0] + (x * cellSize), gridPos[1]),
-                                  (gridPos[0] + (x * cellSize), gridPos[1] + 450))
+                                 (gridPos[0] + (x * cellSize), gridPos[1] + 450))
                 pygame.draw.line(window, BLACK, (gridPos[0], gridPos[1] + (x * cellSize)),
                                  (gridPos[0] + 450, gridPos[1] + (x * cellSize)))
 
@@ -67,3 +87,6 @@ class App:
         if self.mousePos[0] > gridPos[0] + gridSize or self.mousePos[1] > gridPos[1] + gridSize:
             return False
         return (self.mousePos[0] - gridPos[0]) // cellSize, (self.mousePos[1] - gridPos[1]) // cellSize
+
+    def load_buttons(self):
+        self.playingButton.append(Button(20, 40, 100, 40))
