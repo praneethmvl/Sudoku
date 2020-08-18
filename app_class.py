@@ -1,6 +1,9 @@
-import pygame
-from settings import*
-from buttonClass import*
+import pygame,sys
+from settings import *
+from buttonClass import *
+import numpy as np
+
+
 class App:
     def __init__(self):
         pygame.init()
@@ -10,11 +13,16 @@ class App:
         self.selected = None
         self.mousePos = None
         self.state = "playing"
+        self.finish = False
+        self.cellChanged = False
+        self.incorrectCell = []
         self.playingButtons = []
-        self.menuButtons= []
-        self.loadButtons()
-        self.font = pygame.font.SysFont("arial" ,cellSize//2)
-        print(self.grid)
+        self.menuButtons = []
+        self.endButtons = []
+        self.lockedCells = []
+        self.font = pygame.font.SysFont("arial", cellSize // 2)
+        self.load()
+        print (np.matrix(self.grid))
 
     def run(self):
         while self.running:
@@ -23,10 +31,12 @@ class App:
                 self.playing_update()
                 self.playing_draw()
         pygame.quit()
+        sys.exit()
         ###playing state functions#####
+
     def playing_events(self):
         for event in pygame.event.get():
-            if event.type==pygame.QUIT:
+            if event.type == pygame.QUIT:
                 self.running = False
             if event.type == pygame.MOUSEBUTTONDOWN:
                 selected = self.mouseOnGrid()
@@ -35,53 +45,109 @@ class App:
                 else:
                     print("not on board")
                     self.selected = None
+
+            # User Input
+            if event.type == pygame.KEYDOWN:
+                if self.selected != None and self.selected != self.lockedCells:
+                    if self.isInt(event.unicode):
+                        self.grid[self.selected[1]][self.selected[0]] = int(event.unicode)
+                        self.cellChanged = True
+
     def playing_update(self):
-        pass
         self.mousePos = pygame.mouse.get_pos()
         for button in self.playingButtons:
             button.update(self.mousePos)
+        #
+        # if self.cellChanged :
+        #     if self.allCellsDone():
+        #         self.checkAllCells()
+        #         pass
+
+    def checkALlCells(self):
+        pass
     def playing_draw(self):
         self.window.fill(WHITE)
+
         for button in self.playingButtons:
             button.draw(self.window)
+
         if self.selected:
             self.drawSelection(self.window, self.selected)
+
+        self.shadeLockedCells(self.window, self.lockedCells)
+
         self.drawNumber(self.window)
         self.drawGrid(self.window)
+
         pygame.display.update()
+        self.cellChanged = False
 
-    def drawNumber(self,window):
-        for yidx,row in enumerate(self.grid):
-            for xidx,num in enumerate(row):
+    # Helper Functions
+    def shadeLockedCells(self, window, locked):
+        for cell in locked:
+            pygame.draw.rect(window, LOCKEDCELLCOLOR, (cell[0]*cellSize+gridPos[0], cell[1]*cellSize+gridPos[1], cellSize, cellSize))
+            # pygame.draw.rect(window, LOCKEDCELLCOLOR,
+            #                  (cell[0] * cellSize + gridPos[0], cell[1] * cellSize + gridPos[1], cellSize, cellSize))
+
+    def drawNumber(self, window):
+        for yidx, row in enumerate(self.grid):
+            for xidx, num in enumerate(row):
                 if num != 0:
-                    pos = [(xidx * cellSize)+gridPos[0],(yidx *cellSize)+gridPos[1]]
-                    self.textToScreen(window,str(num),pos)
-
+                    pos = [(xidx * cellSize) + gridPos[0], (yidx * cellSize) + gridPos[1]]
+                    self.textToScreen(window, str(num), pos)
 
     def drawSelection(self, window, pos):
-        pygame.draw.rect(window, LIGHTBLUE, ((pos[0]*cellSize)+gridPos[0], (pos[1]*cellSize)+gridPos[1], cellSize, cellSize))
-
+        pygame.draw.rect(window, LIGHTBLUE,
+                         ((pos[0] * cellSize) + gridPos[0], (pos[1] * cellSize) + gridPos[1], cellSize, cellSize))
 
     def drawGrid(self, window):
-        pygame.draw.rect(window, BLACK, (gridPos[0], gridPos[1], WIDTH-150, HEIGHT-150),2)
+        pygame.draw.rect(window, BLACK, (gridPos[0], gridPos[1], WIDTH - 150, HEIGHT - 150), 2)
         for x in range(9):
-                pygame.draw.line(window, BLACK, (gridPos[0]+(x*cellSize), gridPos[1]), (gridPos[0]+(x*cellSize), gridPos[1]+450),2 if x %3 == 0 else 1)
-                pygame.draw.line(window, BLACK, (gridPos[0], gridPos[1]+(x*cellSize)), (gridPos[0]+450, gridPos[1]++(x*cellSize)), 2 if x%3 == 0 else 1)
+            pygame.draw.line(window, BLACK, (gridPos[0] + (x * cellSize), gridPos[1]),
+                             (gridPos[0] + (x * cellSize), gridPos[1] + 450), 2 if x % 3 == 0 else 1)
+            pygame.draw.line(window, BLACK, (gridPos[0], gridPos[1] + (x * cellSize)),
+                             (gridPos[0] + 450, gridPos[1] + +(x * cellSize)), 2 if x % 3 == 0 else 1)
 
     def mouseOnGrid(self):
-        if self.mousePos[0]<gridPos[0] or self.mousePos[1]<gridPos[1]:
+        if self.mousePos[0] < gridPos[0] or self.mousePos[1] < gridPos[1]:
             return False
-        if self.mousePos[0]>gridPos[0]+gridSize or self.mousePos[1]>gridPos[1]+gridSize:
+        if self.mousePos[0] > gridPos[0] + gridSize or self.mousePos[1] > gridPos[1] + gridSize:
             return False
-        return ((self.mousePos[0] - gridPos[0])//cellSize,  (self.mousePos[1] - gridPos[1])//cellSize)
+        return ((self.mousePos[0] - gridPos[0]) // cellSize, (self.mousePos[1] - gridPos[1]) // cellSize)
 
     def loadButtons(self):
-        self.playingButtons.append(Button(20,40,100,40))
+        self.playingButtons.append(Button(20, 40, 100, 40))
 
-    def textToScreen(self,window,text,pos):
-        font = self.font.render(text,False,BLACK)
+    def load(self):
+        self.loadButtons()
+        # self.lockedCells = []
+
+        # Setting locked Cells
+        for yidx, row in enumerate(self.grid):
+            for xidx, num in enumerate(row):
+                if num != 0:
+                    self.lockedCells.append([xidx, yidx])
+        print(self.lockedCells)
+
+    def textToScreen(self, window, text, pos):
+        font = self.font.render(text, False, BLACK)
         fontWidth = font.get_width()
         fontHeight = font.get_height()
-        pos[0] += (cellSize-fontWidth)//2
-        pos[1] += (cellSize-fontHeight)//2
-        window.blit(font,pos)
+        pos[0] += (cellSize - fontWidth) // 2
+        pos[1] += (cellSize - fontHeight) // 2
+        window.blit(font, pos)
+
+    def isInt(self, string):
+        try:
+            int(string)
+            return True
+        except:
+            return False
+
+# Board Checking functions
+    def allCellDone(self):
+        for row in self.grid:
+            for number in row:
+                if number == 0:
+                    return False
+        return True
