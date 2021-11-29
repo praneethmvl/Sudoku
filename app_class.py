@@ -162,7 +162,7 @@ class App:
 
     def checkAllCells(self):
         self.checkRows()
-
+        
     def checkRows(self):
         for yidx ,row in enumerate(self.grid):
             possibles = [1,2,3,4,5,6,7,8,9]
